@@ -2,16 +2,18 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    id("kotlin-kapt")
+    id("com.google.dagger.hilt.android")
 }
 
 android {
     namespace = "com.berlin.snatchy"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.berlin.snatchy"
         minSdk = 28
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
 
@@ -38,8 +40,16 @@ android {
         compose = true
     }
 }
-
+kapt {
+    correctErrorTypes = true
+}
 dependencies {
+
+    implementation("io.coil-kt:coil-compose:2.6.0")
+
+    implementation(libs.hilt.android)
+    kapt("com.google.dagger:hilt-compiler:2.51.1")
+    kapt("androidx.hilt:hilt-compiler:1.0.0")
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
