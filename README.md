@@ -2,7 +2,7 @@
 
 Snatchy is a lightweight Android app designed to effortlessly download and save WhatsApp photo and video statuses.
 
-## Features
+## Versions
 - **v0.2**: View photo and video statuses 📸🎥
 - **v0.3**: Swipe to refresh the status list 🔄
 - **v1.0**: Download selected statuses with a single tap ⬇️
