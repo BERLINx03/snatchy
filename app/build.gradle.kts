@@ -51,6 +51,9 @@ dependencies {
     kapt("com.google.dagger:hilt-compiler:2.51.1")
     kapt("androidx.hilt:hilt-compiler:1.0.0")
 
+
+    implementation(libs.androidx.activity.ktx)
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)

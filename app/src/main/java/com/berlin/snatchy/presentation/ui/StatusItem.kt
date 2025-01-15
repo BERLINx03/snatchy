@@ -3,6 +3,7 @@ package com.berlin.snatchy.presentation.ui
 import android.graphics.Bitmap
 import android.media.MediaMetadataRetriever
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -12,6 +13,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.tooling.preview.Preview
@@ -28,7 +30,7 @@ fun StatusItem(status: File, modifier: Modifier = Modifier) {
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .padding(8.dp),
+            .padding(4.dp),
         elevation = CardDefaults.cardElevation(
             defaultElevation = 4.dp
         )
@@ -36,28 +38,33 @@ fun StatusItem(status: File, modifier: Modifier = Modifier) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(8.dp)
+                .padding(4.dp)
         ) {
-            if (status.extension.lowercase() in listOf("jpg", "jpeg", "png", "gif")) {
-                Image(
-                    painter = rememberImagePainter(data = status),
-                    contentDescription = "Status Image",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp),
-                    contentScale = ContentScale.Crop
-                )
-            } else if (status.extension.lowercase() == "mp4") {
-                val videoFrame = remember { getVideoFrame(status) }
-                videoFrame?.let {
+            Box(
+                modifier = Modifier
+                    .clip(CardDefaults.shape)
+            ){
+                if (status.extension.lowercase() in listOf("jpg", "jpeg", "png", "gif")) {
                     Image(
-                        bitmap = it.asImageBitmap(),
-                        contentDescription = "Video Frame",
+                        painter = rememberImagePainter(data = status),
+                        contentDescription = "Status Image",
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(200.dp),
+                            .height(120.dp),
                         contentScale = ContentScale.Crop
                     )
+                } else if (status.extension.lowercase() == "mp4") {
+                    val videoFrame = remember { getVideoFrame(status) }
+                    videoFrame?.let {
+                        Image(
+                            bitmap = it.asImageBitmap(),
+                            contentDescription = "Video Frame",
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(120.dp),
+                            contentScale = ContentScale.Crop
+                        )
+                    }
                 }
             }
         }

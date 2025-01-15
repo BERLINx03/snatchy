@@ -2,6 +2,7 @@ package com.berlin.snatchy.presentation
 
 import android.content.Context
 import android.os.Environment
+import android.util.Log
 import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -28,6 +29,7 @@ class WhatsappStatusViewModel @Inject constructor(
 
     init {
         fetchWhatsappStatuses()
+        Log.d("WhatsappStatusViewModel", "files got fetched")
     }
 
     fun fetchWhatsappStatuses() {
