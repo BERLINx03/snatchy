@@ -15,7 +15,7 @@ Snatchy is a lightweight Android app designed to effortlessly download and save 
 
 ## How to Download
 To download the latest version of the Snatchy app:
-1. Go to the [Releases](https://github.com/your-repository-name/releases) page.
+1. Go to the [Releases](https://github.com/BERLINx03/snatchy/releases) page.
 2. Download the APK file for the latest release.
 3. Install the APK on your Android device.
 
