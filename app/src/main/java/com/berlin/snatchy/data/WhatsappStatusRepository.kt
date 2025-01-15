@@ -20,6 +20,7 @@ class WhatsappStatusRepository {
             emit(StorageResponse.Loading)
 
             val statusDirectory = File(
+                //wrong path for testing only. -> add /.Statuses for the actual functionality
                 Environment.getExternalStorageDirectory(), "WhatsApp/Media"
             )
             if (statusDirectory.exists() && statusDirectory.isDirectory) {
