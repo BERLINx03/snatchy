@@ -13,6 +13,14 @@ Snatchy is a lightweight Android app designed to effortlessly download and save 
 2. Open Snatchy to find the available statuses 📂
 3. Tap to download your favorites 👍
 
+## How to Download
+To download the latest version of the Snatchy app:
+1. Go to the [Releases](https://github.com/your-repository-name/releases) page.
+2. Download the APK file for the latest release.
+3. Install the APK on your Android device.
+
+> **Note:** You might need to enable installation from unknown sources in your device settings.
+
 ## Tech Stack
 - **Language**: Kotlin 🛠️
 - **Framework**: Android Jetpack 🚀
