@@ -4,6 +4,10 @@ import android.content.Context
 import android.os.Environment
 import android.util.Log
 import android.widget.Toast
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.berlin.snatchy.data.WhatsappStatusRepository
@@ -26,6 +30,8 @@ class WhatsappStatusViewModel @Inject constructor(
     private val _statuses = MutableStateFlow<StorageResponse>(StorageResponse.Loading)
     val statuses = _statuses.asStateFlow()
 
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing = _isRefreshing.asStateFlow()
 
     init {
         fetchWhatsappStatuses()
@@ -34,10 +40,17 @@ class WhatsappStatusViewModel @Inject constructor(
 
     fun fetchWhatsappStatuses() {
         viewModelScope.launch {
+            _isRefreshing.value = true
+            _statuses.value = StorageResponse.Loading
             whatsappRepository.fetchWhatsappStatuses().collect {
                 _statuses.value = it
             }
+            _isRefreshing.value = false
         }
+    }
+
+    fun onRefresh() {
+        fetchWhatsappStatuses()
     }
 
     fun downloadWhatsappStatus(statuses: List<File>, context: Context) {

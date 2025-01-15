@@ -44,12 +44,13 @@ kapt {
     correctErrorTypes = true
 }
 dependencies {
+    implementation(libs.material3)
 
-    implementation("io.coil-kt:coil-compose:2.6.0")
+    implementation(libs.coil.compose)
 
     implementation(libs.hilt.android)
-    kapt("com.google.dagger:hilt-compiler:2.51.1")
-    kapt("androidx.hilt:hilt-compiler:1.0.0")
+    kapt(libs.hilt.compiler)
+    kapt(libs.androidx.hilt.compiler)
 
 
     implementation(libs.androidx.activity.ktx)
