@@ -16,7 +16,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -29,28 +31,42 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshState
 import androidx.compose.material3.pulltorefresh.pullToRefreshIndicator
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color.Companion.Black
-import androidx.compose.ui.graphics.Color.Companion.White
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.berlin.snatchy.domain.model.StorageResponse
 import com.berlin.snatchy.presentation.WhatsappStatusViewModel
 import com.berlin.snatchy.presentation.ui.StatusItem
+import java.io.File
 
 /**
  * @author Abdallah Elsokkary
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SnatchyApplication(whatsappVM: WhatsappStatusViewModel) {
+fun SnatchyApplication(
+    isDark: MutableState<Boolean>,
+    onButtonClicked: () -> Unit,
+    whatsappVM: WhatsappStatusViewModel
+) {
 
     val isRefreshing by whatsappVM.isRefreshing.collectAsState()
+
+    var selectedFiles by remember { mutableStateOf(setOf<File>()) }
+
+    val context = LocalContext.current
+
 
     Scaffold(
         topBar = {
@@ -63,17 +79,49 @@ fun SnatchyApplication(whatsappVM: WhatsappStatusViewModel) {
                     )
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Black,
-                    titleContentColor = White
-                )
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    actionIconContentColor = MaterialTheme.colorScheme.onPrimary
+                ),
+                actions = {
+                    IconButton(onClick = onButtonClicked) {
+                        Icon(
+                            painter =
+                            if
+                                    (isDark.value) painterResource(R.drawable.baseline_light_mode_24)
+                            else
+                                painterResource(R.drawable.baseline_dark_mode_24),
+                            contentDescription = "Switch dark or light mode Button"
+                        )
+                    }
+                }
             )
         },
+        floatingActionButton = {
+            if (selectedFiles.isNotEmpty()) {
+                FloatingActionButton(
+                    onClick = {
+                        whatsappVM.downloadWhatsappStatus(selectedFiles.toList(), context)
+                        selectedFiles = emptySet()
+                    },
+                    containerColor = MaterialTheme.colorScheme.primary
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.baseline_download_24),
+                        contentDescription = "Download",
+                        tint = MaterialTheme.colorScheme.onPrimary
+                    )
+                }
+            }
+        }
     ) { innerPadding ->
         StatusList(
             innerPadding,
             viewModel = whatsappVM,
             isRefreshing = isRefreshing,
-            onRefresh = whatsappVM::onRefresh
+            onRefresh = whatsappVM::onRefresh,
+            selectedFiles = selectedFiles,
+            onSelectedFilesChange = { selectedFiles = it }
         )
     }
 }
@@ -86,6 +134,8 @@ fun StatusList(
     viewModel: WhatsappStatusViewModel,
     isRefreshing: Boolean,
     onRefresh: () -> Unit,
+    selectedFiles: Set<File>,  // NEW
+    onSelectedFilesChange: (Set<File>) -> Unit
 ) {
     val statusResponse by viewModel.statuses.collectAsState()
     val pullToRefreshState = rememberPullToRefreshState()
@@ -122,7 +172,19 @@ fun StatusList(
                     val statuses = (statusResponse as StorageResponse.Success).statusList
                     LazyVerticalGrid(GridCells.Fixed(3)) {
                         items(statuses) { file ->
-                            StatusItem(status = file)
+                            StatusItem(
+                                status = file,
+                                isSelected = selectedFiles.contains(file),
+                                onClick = {
+                                    onSelectedFilesChange(
+                                        if (file in selectedFiles) {
+                                            selectedFiles - file
+                                        } else {
+                                            selectedFiles + file
+                                        }
+                                    )
+                                }
+                            )
                         }
                     }
                 }

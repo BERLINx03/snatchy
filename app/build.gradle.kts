@@ -49,6 +49,7 @@ dependencies {
     implementation(libs.coil.compose)
 
     implementation(libs.hilt.android)
+    implementation(libs.androidx.media3.exoplayer)
     kapt(libs.hilt.compiler)
     kapt(libs.androidx.hilt.compiler)
 

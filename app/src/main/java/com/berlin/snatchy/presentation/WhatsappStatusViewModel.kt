@@ -38,7 +38,7 @@ class WhatsappStatusViewModel @Inject constructor(
         Log.d("WhatsappStatusViewModel", "files got fetched")
     }
 
-    fun fetchWhatsappStatuses() {
+    private fun fetchWhatsappStatuses() {
         viewModelScope.launch {
             _isRefreshing.value = true
             _statuses.value = StorageResponse.Loading
@@ -56,8 +56,8 @@ class WhatsappStatusViewModel @Inject constructor(
     fun downloadWhatsappStatus(statuses: List<File>, context: Context) {
         viewModelScope.launch {
             val destinationPath = File(
-                Environment.getExternalStorageDirectory(),
-                "snatchy"
+                context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS),
+                "Snatchy"
             )
             if (!destinationPath.exists()) {
                 destinationPath.mkdirs()
@@ -67,7 +67,6 @@ class WhatsappStatusViewModel @Inject constructor(
                 .collect {
                     when (it) {
                         is StorageResponse.Success -> {
-                            // Show a success toast
                             Toast.makeText(
                                 context,
                                 it.message ?: "Statuses downloaded successfully.",
@@ -76,7 +75,6 @@ class WhatsappStatusViewModel @Inject constructor(
                         }
 
                         is StorageResponse.Failure -> {
-                            // Show a failure toast
                             Toast.makeText(
                                 context,
                                 it.message,
@@ -85,7 +83,7 @@ class WhatsappStatusViewModel @Inject constructor(
                         }
 
                         is StorageResponse.Loading -> {
-                            // Optional: Show a loading state (e.g., progress indicator)
+                            // loading state progress indicator
                         }
 
                     }

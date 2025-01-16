@@ -1,5 +1,6 @@
 package com.berlin.snatchy.di
 
+import android.app.Application
 import com.berlin.snatchy.data.WhatsappStatusRepository
 import dagger.Module
 import dagger.Provides
@@ -13,6 +14,8 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideWhatsappStatusRepository() = WhatsappStatusRepository()
+    fun provideWhatsappStatusRepository(application: Application): WhatsappStatusRepository {
+        return WhatsappStatusRepository(application)
+    }
 
 }

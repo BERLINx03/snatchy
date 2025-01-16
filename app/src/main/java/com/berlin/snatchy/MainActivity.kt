@@ -1,118 +1,127 @@
 package com.berlin.snatchy
 
-import android.os.Bundle
-import android.util.Log
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.activity.viewModels
-import androidx.core.content.ContextCompat
-import com.berlin.snatchy.presentation.WhatsappStatusViewModel
-import com.berlin.snatchy.presentation.ui.theme.SnatchyTheme
-import dagger.hilt.android.AndroidEntryPoint
 import android.Manifest
 import android.app.AlertDialog
 import android.content.pm.PackageManager
 import android.os.Build
+import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import com.berlin.snatchy.presentation.WhatsappStatusViewModel
+import com.berlin.snatchy.presentation.ui.theme.SnatchyTheme
+import dagger.hilt.android.AndroidEntryPoint
 
 const val permission = "permission"
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     private val whatsappVM by viewModels<WhatsappStatusViewModel>()
 
-    private val requestPermissionLauncher =
-        registerForActivityResult(
-            ActivityResultContracts.RequestPermission()
-        ) { isGranted: Boolean ->
-            if (isGranted) {
-                Log.i(permission, "Granted")
-            } else {
-                Log.i(permission, "Denied")
-                if (shouldShowRequestPermissionRationale(getRequiredPermission())) {
-                    Toast.makeText(
-                        this,
-                        "Permission denied. Cannot show WhatsApp statuses.",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                } else {
-                    // "Don't ask again" case
-                    Toast.makeText(
-                        this,
-                        "Permission permanently denied. Enable it in app settings.",
-                        Toast.LENGTH_LONG
-                    ).show()
+    private val requestMultiplePermissions =
+        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
+            permissions.entries.forEach { entry ->
+                when (entry.key) {
+                    Manifest.permission.READ_EXTERNAL_STORAGE,
+                    Manifest.permission.READ_MEDIA_IMAGES -> {
+                        if (entry.value) {
+                            Log.i(permission, "Read Permission Granted")
+                        } else {
+                            handlePermissionDenial(entry.key)
+                        }
+                    }
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE -> {
+                        if (entry.value) {
+                            Log.i(permission, "Write Permission Granted")
+                        } else {
+                            handlePermissionDenial(entry.key)
+                        }
+                    }
                 }
             }
         }
 
-    private fun getRequiredPermission(): String {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            Manifest.permission.READ_MEDIA_IMAGES
+    private fun handlePermissionDenial(permission: String) {
+        if (shouldShowRequestPermissionRationale(permission)) {
+            Toast.makeText(
+                this,
+                "Permission denied. Some features may not work properly.",
+                Toast.LENGTH_SHORT
+            ).show()
         } else {
-            Manifest.permission.READ_EXTERNAL_STORAGE
+            Toast.makeText(
+                this,
+                "Permission permanently denied. Enable it in app settings.",
+                Toast.LENGTH_LONG
+            ).show()
+        }
+    }
+
+    private fun getRequiredPermissions(): Array<String> {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            arrayOf(Manifest.permission.READ_MEDIA_IMAGES)
+        } else if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
+            // For Android 9 (P) and below, request both READ and WRITE
+            arrayOf(
+                Manifest.permission.READ_EXTERNAL_STORAGE,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE
+            )
+        } else {
+            // For Android 10+ only READ is needed (Scoped Storage)
+            arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
         }
     }
 
 
-    private fun requestPermission() {
-        val requiredPermission = getRequiredPermission()
-        when {
-            ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.READ_EXTERNAL_STORAGE
-            ) == PackageManager.PERMISSION_GRANTED -> {
-                //already granted
-                Log.i(permission, "Already granted")
-            }
+    private fun requestPermissions() {
+        val requiredPermissions = getRequiredPermissions()
+        val permissionsToRequest = requiredPermissions.filter {
+            ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
+        }.toTypedArray()
 
-            ActivityCompat.shouldShowRequestPermissionRationale(
-                this,
-                Manifest.permission.READ_EXTERNAL_STORAGE
-            ) -> {
-                //UI for showing why the permission is needed
-                AlertDialog.Builder(this)
-                    .setTitle("Permission Needed")
-                    .setMessage("This app needs access to your storage to show and download WhatsApp statuses.")
-                    .setPositiveButton("Grant Permission") { _, _ ->
-                        requestPermissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
-                    }
-                    .setNegativeButton("Cancel") { dialog, _ ->
-                        dialog.dismiss()
-                    }
-                    .create()
-                    .show()
-            }
+        if (permissionsToRequest.isEmpty()) {
+            Log.i(permission, "All permissions already granted")
+            return
+        }
 
-            else -> {
-                requestPermissionLauncher.launch(
-                    requiredPermission
-                )
-                // Additional check for "Don't ask again" cases
-                if (!ActivityCompat.shouldShowRequestPermissionRationale(
-                        this,
-                        requiredPermission
-                    )
-                ) {
-                    Toast.makeText(
-                        this,
-                        "Permission permanently denied. Enable it in app settings.",
-                        Toast.LENGTH_LONG
-                    ).show()
+        val shouldShowRationale = permissionsToRequest.any {
+            ActivityCompat.shouldShowRequestPermissionRationale(this, it)
+        }
+
+        if (shouldShowRationale) {
+            AlertDialog.Builder(this)
+                .setTitle("Permissions Needed")
+                .setMessage("This app needs access to your storage to show and download WhatsApp statuses.")
+                .setPositiveButton("Grant Permissions") { _, _ ->
+                    requestMultiplePermissions.launch(permissionsToRequest)
                 }
-            }
+                .setNegativeButton("Cancel") { dialog, _ ->
+                    dialog.dismiss()
+                }
+                .create()
+                .show()
+        } else {
+            requestMultiplePermissions.launch(permissionsToRequest)
         }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        requestPermission()
-        enableEdgeToEdge()
+        requestPermissions()
         setContent {
-            SnatchyTheme {
-                SnatchyApplication(whatsappVM)
+            val isDark = remember { mutableStateOf(false) }
+            SnatchyTheme(darkTheme = isDark.value) {
+                SnatchyApplication(
+                    isDark = isDark,
+                    onButtonClicked = { isDark.value = !isDark.value },
+                    whatsappVM
+                )
             }
         }
     }
