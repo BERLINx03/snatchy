@@ -67,11 +67,9 @@ class WhatsappStatusViewModel @Inject constructor(
             try {
                 Log.d("WhatsappStatusViewModel", "Starting download for ${statuses.size} files")
 
-                // We don't need to create directory for MediaStore API
                 val destinationPath = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    ""  // MediaStore handles the path
+                    ""
                 } else {
-                    // For older versions, use the appropriate public directory
                     Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
                         .toString() + "/Snatchy"
                 }

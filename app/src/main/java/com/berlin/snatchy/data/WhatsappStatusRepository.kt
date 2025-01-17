@@ -41,11 +41,8 @@ class WhatsappStatusRepository @Inject constructor(
             }
 
             val possiblePaths = listOf(
-                // Original path
                 File(Environment.getExternalStorageDirectory(), "WhatsApp/Media/.Statuses"),
-                // New path for Android 10+
                 File(Environment.getExternalStorageDirectory(), "Android/media/com.whatsapp/WhatsApp/Media/.Statuses"),
-                // Business WhatsApp path
                 File(Environment.getExternalStorageDirectory(), "WhatsApp Business/Media/.Statuses")
             )
 
@@ -94,13 +91,12 @@ class WhatsappStatusRepository @Inject constructor(
         try {
             statuses.forEach { status ->
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    // Android 10+ : Use MediaStore
                     val contentValues = ContentValues().apply {
                         put(MediaStore.MediaColumns.DISPLAY_NAME, status.name)
                         put(MediaStore.MediaColumns.MIME_TYPE, getMimeType(status))
                         put(MediaStore.MediaColumns.IS_PENDING, 1)
 
-                        // Set appropriate directory based on file type
+                        //directory based on file type
                         val isVideo = status.name.endsWith(".mp4", ignoreCase = true)
                         put(MediaStore.MediaColumns.RELATIVE_PATH,
                             if (isVideo) Environment.DIRECTORY_MOVIES + "/Snatchy"
@@ -127,7 +123,7 @@ class WhatsappStatusRepository @Inject constructor(
                             }
                         }
 
-                        // Clear the pending flag
+                        // Clear the pending
                         contentValues.clear()
                         contentValues.put(MediaStore.MediaColumns.IS_PENDING, 0)
                         context.contentResolver.update(it, contentValues, null, null)
