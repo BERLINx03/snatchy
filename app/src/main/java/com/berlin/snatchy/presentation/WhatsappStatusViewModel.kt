@@ -43,12 +43,18 @@ class WhatsappStatusViewModel @Inject constructor(
 
     fun fetchWhatsappStatuses() {
         viewModelScope.launch {
-            _isRefreshing.value = true
-            _statuses.value = StorageResponse.Loading
-            whatsappRepository.fetchWhatsappStatuses().collect {
-                _statuses.value = it
+            try {
+                _isRefreshing.value = true
+                _statuses.value = StorageResponse.Loading
+
+                whatsappRepository.fetchWhatsappStatuses().collect { response ->
+                    _statuses.value = response
+                }
+            } catch (e: Exception) {
+                _statuses.value = StorageResponse.Failure("Error: ${e.message}")
+            } finally {
+                _isRefreshing.value = false
             }
-            _isRefreshing.value = false
         }
     }
 
@@ -56,39 +62,53 @@ class WhatsappStatusViewModel @Inject constructor(
         fetchWhatsappStatuses()
     }
 
-    @RequiresApi(Build.VERSION_CODES.Q)
     fun downloadWhatsappStatus(statuses: List<File>, context: Context) {
         viewModelScope.launch {
-            val destinationPath = File(Environment.getExternalStorageDirectory().toString() + "/Download/Snatchy")
-            if (!destinationPath.exists()) {
-                destinationPath.mkdirs()
-            }
+            try {
+                Log.d("WhatsappStatusViewModel", "Starting download for ${statuses.size} files")
 
-            whatsappRepository.downloadWhatsappStatus(statuses, destinationPath.absolutePath)
-                .collect {
-                    when (it) {
-                        is StorageResponse.Success -> {
-                            Toast.makeText(
-                                context,
-                                it.message ?: "Statuses downloaded successfully.",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
-
-                        is StorageResponse.Failure -> {
-                            Toast.makeText(
-                                context,
-                                it.message,
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
-
-                        is StorageResponse.Loading -> {
-                            // loading state progress indicator
-                        }
-
+                val destinationPath = File(
+                    Environment.getExternalStorageDirectory().toString() + "/Download/Snatchy"
+                ).apply {
+                    if (!exists()) {
+                        val created = mkdirs()
+                        Log.d("WhatsappStatusViewModel", "Created directory: $created")
                     }
                 }
+
+                Log.d("WhatsappStatusViewModel", "Saving to: ${destinationPath.absolutePath}")
+
+                whatsappRepository.downloadWhatsappStatus(statuses, destinationPath.absolutePath)
+                    .collect { response ->
+                        Log.d("WhatsappStatusViewModel", "Download response: $response")
+                        when (response) {
+                            is StorageResponse.Success -> {
+                                Toast.makeText(
+                                    context,
+                                    response.message ?: "Statuses downloaded successfully.",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                            is StorageResponse.Failure -> {
+                                Toast.makeText(
+                                    context,
+                                    "Download failed: ${response.message}",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                            is StorageResponse.Loading -> {
+                                // You might want to show a loading indicator here
+                            }
+                        }
+                    }
+            } catch (e: Exception) {
+                Log.e("WhatsappStatusViewModel", "Download error", e)
+                Toast.makeText(
+                    context,
+                    "Download error: ${e.message}",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
         }
     }
 }
