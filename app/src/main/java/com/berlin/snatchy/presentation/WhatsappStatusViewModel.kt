@@ -1,9 +1,11 @@
 package com.berlin.snatchy.presentation
 
 import android.content.Context
+import android.os.Build
 import android.os.Environment
 import android.util.Log
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -13,6 +15,7 @@ import androidx.lifecycle.viewModelScope
 import com.berlin.snatchy.data.WhatsappStatusRepository
 import com.berlin.snatchy.domain.model.StorageResponse
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -24,7 +27,7 @@ import javax.inject.Inject
  */
 @HiltViewModel
 class WhatsappStatusViewModel @Inject constructor(
-    private val whatsappRepository: WhatsappStatusRepository
+    private val whatsappRepository: WhatsappStatusRepository,
 ) : ViewModel() {
 
     private val _statuses = MutableStateFlow<StorageResponse>(StorageResponse.Loading)
@@ -38,7 +41,7 @@ class WhatsappStatusViewModel @Inject constructor(
         Log.d("WhatsappStatusViewModel", "files got fetched")
     }
 
-    private fun fetchWhatsappStatuses() {
+    fun fetchWhatsappStatuses() {
         viewModelScope.launch {
             _isRefreshing.value = true
             _statuses.value = StorageResponse.Loading
@@ -53,6 +56,7 @@ class WhatsappStatusViewModel @Inject constructor(
         fetchWhatsappStatuses()
     }
 
+    @RequiresApi(Build.VERSION_CODES.Q)
     fun downloadWhatsappStatus(statuses: List<File>, context: Context) {
         viewModelScope.launch {
             val destinationPath = File(

@@ -1,7 +1,9 @@
 package com.berlin.snatchy.data
 
+import android.Manifest
 import android.content.ContentValues
 import android.content.Context
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
@@ -9,6 +11,7 @@ import android.provider.MediaStore
 import android.util.Log
 import androidx.annotation.RequiresApi
 import com.berlin.snatchy.domain.model.StorageResponse
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -18,24 +21,41 @@ import java.io.FileInputStream
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
+import javax.inject.Inject
 
 /**
  * @author Abdallah Elsokkary
  */
-class WhatsappStatusRepository(private val context: Context) {
+class WhatsappStatusRepository @Inject constructor(
+    @ApplicationContext private val context: Context
+) {
 
     fun fetchWhatsappStatuses(): Flow<StorageResponse> {
         return flow {
             emit(StorageResponse.Loading)
 
+            val hasPermissions = hasRequiredPermissions(context)
+            Log.d("WhatsappRepo", "Has permissions: $hasPermissions")
+
+            if (!hasPermissions) {
+                emit(StorageResponse.Failure("Required permissions not granted"))
+                return@flow
+            }
+
             val statusDirectory = File(
-                //wrong path for testing only. -> add /.Statuses for the actual functionality
-                Environment.getExternalStorageDirectory(), "WhatsApp/Media/.Statuses"
+                Environment.getExternalStorageDirectory(),
+                "WhatsApp/Media/.Statuses"
             )
+
+            Log.d("WhatsappRepo", "Directory exists: ${statusDirectory.exists()}")
+            Log.d("WhatsappRepo", "Directory path: ${statusDirectory.absolutePath}")
+
             if (statusDirectory.exists() && statusDirectory.isDirectory) {
                 val statuses = statusDirectory.listFiles()?.filter { file ->
                     file.isFile && isSupportedStatusFile(file)
                 } ?: emptyList()
+
+                Log.d("WhatsappRepo", "Found ${statuses.size} status files")
 
                 if (statuses.isNotEmpty())
                     emit(StorageResponse.Success(statusList = statuses))
@@ -47,6 +67,24 @@ class WhatsappStatusRepository(private val context: Context) {
         }.flowOn(Dispatchers.IO)
     }
 
+    private fun hasRequiredPermissions(context: Context): Boolean {
+        return when {
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.R -> {
+                Environment.isExternalStorageManager().also {
+                    Log.d("WhatsappRepo", "Environment.isExternalStorageManager(): $it")
+                }
+            }
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.M -> {
+                context.checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) ==
+                        PackageManager.PERMISSION_GRANTED.also {
+                            Log.d("WhatsappRepo", "READ_EXTERNAL_STORAGE permission granted: $it")
+                        }
+            }
+            else -> true.also {
+                Log.d("WhatsappRepo", "No specific permissions needed for SDK < M")
+            }
+        }
+    }
 
     @RequiresApi(Build.VERSION_CODES.Q)
     fun downloadWhatsappStatus(
