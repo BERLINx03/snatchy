@@ -67,25 +67,25 @@ class WhatsappStatusViewModel @Inject constructor(
             try {
                 Log.d("WhatsappStatusViewModel", "Starting download for ${statuses.size} files")
 
-                val destinationPath = File(
-                    Environment.getExternalStorageDirectory().toString() + "/Download/Snatchy"
-                ).apply {
-                    if (!exists()) {
-                        val created = mkdirs()
-                        Log.d("WhatsappStatusViewModel", "Created directory: $created")
-                    }
+                // We don't need to create directory for MediaStore API
+                val destinationPath = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    ""  // MediaStore handles the path
+                } else {
+                    // For older versions, use the appropriate public directory
+                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
+                        .toString() + "/Snatchy"
                 }
 
-                Log.d("WhatsappStatusViewModel", "Saving to: ${destinationPath.absolutePath}")
+                Log.d("WhatsappStatusViewModel", "Using path: $destinationPath")
 
-                whatsappRepository.downloadWhatsappStatus(statuses, destinationPath.absolutePath)
+                whatsappRepository.downloadWhatsappStatus(statuses)
                     .collect { response ->
                         Log.d("WhatsappStatusViewModel", "Download response: $response")
                         when (response) {
                             is StorageResponse.Success -> {
                                 Toast.makeText(
                                     context,
-                                    response.message ?: "Statuses downloaded successfully.",
+                                    response.message ?: "Statuses saved to gallery successfully.",
                                     Toast.LENGTH_SHORT
                                 ).show()
                             }
@@ -97,7 +97,6 @@ class WhatsappStatusViewModel @Inject constructor(
                                 ).show()
                             }
                             is StorageResponse.Loading -> {
-                                // You might want to show a loading indicator here
                             }
                         }
                     }

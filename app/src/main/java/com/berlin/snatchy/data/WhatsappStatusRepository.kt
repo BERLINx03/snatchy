@@ -3,7 +3,9 @@ package com.berlin.snatchy.data
 import android.Manifest
 import android.content.ContentValues
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
@@ -85,7 +87,6 @@ class WhatsappStatusRepository @Inject constructor(
 
     fun downloadWhatsappStatus(
         statuses: List<File>,
-        destinationPath: String
     ): Flow<StorageResponse> = flow {
         emit(StorageResponse.Loading)
         val downloadedStatus = mutableListOf<File>()
@@ -95,15 +96,29 @@ class WhatsappStatusRepository @Inject constructor(
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                     // Android 10+ : Use MediaStore
                     val contentValues = ContentValues().apply {
-                        put(MediaStore.Downloads.DISPLAY_NAME, status.name)
-                        put(MediaStore.Downloads.MIME_TYPE, getMimeType(status))
-                        put(MediaStore.Downloads.RELATIVE_PATH, "Download/Snatchy")
+                        put(MediaStore.MediaColumns.DISPLAY_NAME, status.name)
+                        put(MediaStore.MediaColumns.MIME_TYPE, getMimeType(status))
+                        put(MediaStore.MediaColumns.IS_PENDING, 1)
+
+                        // Set appropriate directory based on file type
+                        val isVideo = status.name.endsWith(".mp4", ignoreCase = true)
+                        put(MediaStore.MediaColumns.RELATIVE_PATH,
+                            if (isVideo) Environment.DIRECTORY_MOVIES + "/Snatchy"
+                            else Environment.DIRECTORY_PICTURES + "/Snatchy"
+                        )
                     }
 
-                    val uri = context.contentResolver.insert(
-                        MediaStore.Downloads.EXTERNAL_CONTENT_URI,
-                        contentValues
-                    )
+                    // Choose correct MediaStore collection based on file type
+                    val collection = when {
+                        status.name.endsWith(".mp4", ignoreCase = true) -> {
+                            MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+                        }
+                        else -> {
+                            MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+                        }
+                    }
+
+                    val uri = context.contentResolver.insert(collection, contentValues)
 
                     uri?.let {
                         context.contentResolver.openOutputStream(it)?.use { outputStream ->
@@ -111,11 +126,23 @@ class WhatsappStatusRepository @Inject constructor(
                                 inputStream.copyTo(outputStream)
                             }
                         }
+
+                        // Clear the pending flag
+                        contentValues.clear()
+                        contentValues.put(MediaStore.MediaColumns.IS_PENDING, 0)
+                        context.contentResolver.update(it, contentValues, null, null)
+
                         downloadedStatus.add(status)
+                        Log.d("WhatsappStatusRepository", "Saved file: ${status.name} to ${if(status.name.endsWith(".mp4", ignoreCase = true)) "Movies" else "Pictures"}")
                     }
                 } else {
                     // Below Android 10: Direct file copy
-                    val desDir = File(destinationPath)
+                    val isVideo = status.name.endsWith(".mp4", ignoreCase = true)
+                    val desDir = File(Environment.getExternalStoragePublicDirectory(
+                        if (isVideo) Environment.DIRECTORY_MOVIES
+                        else Environment.DIRECTORY_PICTURES
+                    ), "Snatchy")
+
                     if (!desDir.exists()) desDir.mkdirs()
 
                     val statusFile = File(desDir, status.name)
@@ -125,6 +152,9 @@ class WhatsappStatusRepository @Inject constructor(
                                 input.copyTo(output)
                             }
                         }
+                        // Trigger media scan
+                        context.sendBroadcast(Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE,
+                            Uri.fromFile(statusFile)))
                         downloadedStatus.add(statusFile)
                     }
                 }
@@ -134,7 +164,7 @@ class WhatsappStatusRepository @Inject constructor(
                 emit(
                     StorageResponse.Success(
                         statusList = statuses,
-                        message = "${downloadedStatus.size} statuses have been downloaded successfully."
+                        message = "${downloadedStatus.size} statuses have been saved to gallery."
                     )
                 )
             } else {
