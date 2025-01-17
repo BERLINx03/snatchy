@@ -25,9 +25,7 @@ import com.berlin.snatchy.presentation.ui.theme.SnatchyTheme
 import dagger.hilt.android.AndroidEntryPoint
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-
     private val whatsappVM by viewModels<WhatsappStatusViewModel>()
-
     private val requestMultiplePermissions =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
             Log.d("MainActivity", "Permission results: $permissions")
@@ -57,6 +55,8 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
+
+            // Check permissions after they are granted and trigger fetch statuses if all are granted
             if (hasRequiredPermissions(this)) {
                 Log.d("MainActivity", "All required permissions are granted.")
                 whatsappVM.fetchWhatsappStatuses()
@@ -99,33 +99,27 @@ class MainActivity : ComponentActivity() {
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.R -> {
                 arrayOf(Manifest.permission.MANAGE_EXTERNAL_STORAGE)
             }
-            Build.VERSION.SDK_INT <= Build.VERSION_CODES.P -> {
+            else -> {
                 arrayOf(
                     Manifest.permission.READ_EXTERNAL_STORAGE,
                     Manifest.permission.WRITE_EXTERNAL_STORAGE
                 )
-            }
-            else -> {
-                arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
             }
         }
     }
 
     private fun hasRequiredPermissions(context: Context): Boolean {
         return when {
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU -> {
+                context.checkSelfPermission(Manifest.permission.READ_MEDIA_IMAGES) == PackageManager.PERMISSION_GRANTED &&
+                        context.checkSelfPermission(Manifest.permission.READ_MEDIA_VIDEO) == PackageManager.PERMISSION_GRANTED
+            }
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.R -> {
-                Environment.isExternalStorageManager().also {
-                    Log.d("MainActivity", "Environment.isExternalStorageManager(): $it")
-                }
+                Environment.isExternalStorageManager()
             }
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.M -> {
-                context.checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) ==
-                        PackageManager.PERMISSION_GRANTED.also {
-                            Log.d("MainActivity", "READ_EXTERNAL_STORAGE permission granted: $it")
-                        }
-            }
-            else -> true.also {
-                Log.d("MainActivity", "No specific permissions needed for SDK < M")
+            else -> {
+                context.checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED &&
+                        context.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
             }
         }
     }
