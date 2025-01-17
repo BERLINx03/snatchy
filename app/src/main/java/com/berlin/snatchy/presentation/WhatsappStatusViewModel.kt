@@ -59,10 +59,7 @@ class WhatsappStatusViewModel @Inject constructor(
     @RequiresApi(Build.VERSION_CODES.Q)
     fun downloadWhatsappStatus(statuses: List<File>, context: Context) {
         viewModelScope.launch {
-            val destinationPath = File(
-                context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS),
-                "Snatchy"
-            )
+            val destinationPath = File(Environment.getExternalStorageDirectory().toString() + "/Download/Snatchy")
             if (!destinationPath.exists()) {
                 destinationPath.mkdirs()
             }
