@@ -123,7 +123,6 @@ class WhatsappStatusRepository @Inject constructor(
                             }
                         }
 
-                        // Clear the pending
                         contentValues.clear()
                         contentValues.put(MediaStore.MediaColumns.IS_PENDING, 0)
                         context.contentResolver.update(it, contentValues, null, null)
@@ -132,7 +131,6 @@ class WhatsappStatusRepository @Inject constructor(
                         Log.d("WhatsappStatusRepository", "Saved file: ${status.name} to ${if(status.name.endsWith(".mp4", ignoreCase = true)) "Movies" else "Pictures"}")
                     }
                 } else {
-                    // Below Android 10: Direct file copy
                     val isVideo = status.name.endsWith(".mp4", ignoreCase = true)
                     val desDir = File(Environment.getExternalStoragePublicDirectory(
                         if (isVideo) Environment.DIRECTORY_MOVIES

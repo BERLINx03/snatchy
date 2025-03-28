@@ -1,5 +1,8 @@
 package com.berlin.snatchy
 
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
@@ -139,6 +142,7 @@ fun StatusList(
 ) {
     val statusResponse by viewModel.statuses.collectAsState()
     val pullToRefreshState = rememberPullToRefreshState()
+    val context = LocalContext.current
 
     PullToRefreshBox(
         isRefreshing = isRefreshing,
@@ -175,6 +179,9 @@ fun StatusList(
                             StatusItem(
                                 status = file,
                                 isSelected = selectedFiles.contains(file),
+                                onSeeImage = { stringUri ->
+                                    showImageStatus(stringUri, context)
+                                },
                                 onClick = {
                                     onSelectedFilesChange(
                                         if (file in selectedFiles) {
@@ -201,6 +208,12 @@ fun StatusList(
             }
         }
     }
+}
+
+private fun showImageStatus(stringUri: String, context: Context) {
+    val uri = Uri.parse(stringUri)
+    val intent = Intent(Intent.ACTION_VIEW, uri)
+    context.startActivity(intent)
 }
 //from documentation
 @OptIn(ExperimentalMaterial3Api::class)
