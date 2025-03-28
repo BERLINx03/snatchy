@@ -66,13 +66,18 @@ class WhatsappStatusRepository @Inject constructor(
         }.flowOn(Dispatchers.IO)
     }
 
-    private fun hasRequiredPermissions(context: Context): Boolean {
+    fun hasRequiredPermissions(context: Context): Boolean {
         return when {
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU -> {
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE -> { // API 34
+                context.checkSelfPermission(Manifest.permission.READ_MEDIA_IMAGES) == PackageManager.PERMISSION_GRANTED &&
+                        context.checkSelfPermission(Manifest.permission.READ_MEDIA_VIDEO) == PackageManager.PERMISSION_GRANTED &&
+                        Environment.isExternalStorageManager()
+            }
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU -> { // API 33
                 context.checkSelfPermission(Manifest.permission.READ_MEDIA_IMAGES) == PackageManager.PERMISSION_GRANTED &&
                         context.checkSelfPermission(Manifest.permission.READ_MEDIA_VIDEO) == PackageManager.PERMISSION_GRANTED
             }
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.R -> {
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.R -> { // API 30
                 Environment.isExternalStorageManager()
             }
             else -> {

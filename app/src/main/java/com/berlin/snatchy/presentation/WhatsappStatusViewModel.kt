@@ -5,11 +5,6 @@ import android.os.Build
 import android.os.Environment
 import android.util.Log
 import android.widget.Toast
-import androidx.annotation.RequiresApi
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.berlin.snatchy.data.WhatsappStatusRepository
@@ -28,6 +23,7 @@ import javax.inject.Inject
 @HiltViewModel
 class WhatsappStatusViewModel @Inject constructor(
     private val whatsappRepository: WhatsappStatusRepository,
+    @ApplicationContext private val context: Context
 ) : ViewModel() {
 
     private val _statuses = MutableStateFlow<StorageResponse>(StorageResponse.Loading)
@@ -37,8 +33,11 @@ class WhatsappStatusViewModel @Inject constructor(
     val isRefreshing = _isRefreshing.asStateFlow()
 
     init {
-        fetchWhatsappStatuses()
-        Log.d("WhatsappStatusViewModel", "files got fetched")
+        if (whatsappRepository.hasRequiredPermissions(context)) {
+            fetchWhatsappStatuses()
+        } else {
+            _statuses.value = StorageResponse.Failure("Permissions not granted")
+        }
     }
 
     fun fetchWhatsappStatuses() {
@@ -59,7 +58,11 @@ class WhatsappStatusViewModel @Inject constructor(
     }
 
     fun onRefresh() {
-        fetchWhatsappStatuses()
+        if (whatsappRepository.hasRequiredPermissions(context)) {
+            fetchWhatsappStatuses()
+        } else {
+            _statuses.value = StorageResponse.Failure("Permissions not granted")
+        }
     }
 
     fun downloadWhatsappStatus(statuses: List<File>, context: Context) {
