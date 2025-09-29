@@ -45,16 +45,13 @@ kapt {
 }
 dependencies {
     implementation(libs.material3)
-
     implementation(libs.coil.compose)
-
     implementation(libs.hilt.android)
     kapt(libs.hilt.compiler)
     kapt(libs.androidx.hilt.compiler)
 
 
     implementation(libs.androidx.activity.ktx)
-
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
