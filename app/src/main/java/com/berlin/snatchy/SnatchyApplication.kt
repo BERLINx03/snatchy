@@ -1,17 +1,12 @@
 package com.berlin.snatchy
 
-import android.content.Context
-import android.content.Intent
-import android.net.Uri
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -19,9 +14,6 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -51,10 +43,10 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.berlin.snatchy.domain.model.StorageResponse
 import com.berlin.snatchy.presentation.WhatsappStatusViewModel
+import com.berlin.snatchy.presentation.ui.FailedScreen
 import com.berlin.snatchy.presentation.ui.StatusItem
 import java.io.File
 
@@ -66,7 +58,8 @@ import java.io.File
 fun SnatchyApplication(
     isDark: MutableState<Boolean>,
     onButtonClicked: () -> Unit,
-    whatsappVM: WhatsappStatusViewModel
+    whatsappVM: WhatsappStatusViewModel,
+    onRequestPermission: () -> Unit
 ) {
 
     val isRefreshing by whatsappVM.isRefreshing.collectAsState()
@@ -129,6 +122,7 @@ fun SnatchyApplication(
             isRefreshing = isRefreshing,
             onRefresh = whatsappVM::onRefresh,
             selectedFiles = selectedFiles,
+            onRequestPermission = onRequestPermission,
             onSelectedFilesChange = { selectedFiles = it }
         )
     }
@@ -143,11 +137,11 @@ fun StatusList(
     isRefreshing: Boolean,
     onRefresh: () -> Unit,
     selectedFiles: Set<File>,
+    onRequestPermission: () -> Unit,
     onSelectedFilesChange: (Set<File>) -> Unit
 ) {
     val statusResponse by viewModel.statuses.collectAsState()
     val pullToRefreshState = rememberPullToRefreshState()
-    val context = LocalContext.current
 
     PullToRefreshBox(
         isRefreshing = isRefreshing,
@@ -184,9 +178,6 @@ fun StatusList(
                             StatusItem(
                                 status = file,
                                 isSelected = selectedFiles.contains(file),
-                                onSeeImage = { stringUri ->
-                                    showImageStatus(stringUri, context)
-                                },
                                 onClick = {
                                     onSelectedFilesChange(
                                         if (file in selectedFiles) {
@@ -202,47 +193,15 @@ fun StatusList(
                 }
 
                 is StorageResponse.Failure -> {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Warning,
-                            contentDescription = "Error",
-                            modifier = Modifier.size(64.dp),
-                            tint = MaterialTheme.colorScheme.error
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            text = "An error occurred",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.error,
-                            textAlign = TextAlign.Center
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Button(
-                            onClick = onRefresh,
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.errorContainer,
-                                contentColor = MaterialTheme.colorScheme.onErrorContainer
-                            )
-                        ) {
-                            Text("Retry")
-                        }
-                    }
+                    val errorMessage = (statusResponse as StorageResponse.Failure).message
+                    FailedScreen(
+                        errorMessage = errorMessage,
+                        onRequestPermissions = onRequestPermission,
+                    )
                 }
             }
         }
     }
-}
-
-private fun showImageStatus(stringUri: String, context: Context) {
-    val uri = Uri.parse(stringUri)
-    val intent = Intent(Intent.ACTION_VIEW, uri)
-    context.startActivity(intent)
 }
 //from documentation
 @OptIn(ExperimentalMaterial3Api::class)

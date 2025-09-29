@@ -1,10 +1,8 @@
 package com.berlin.snatchy.data
 
-import android.Manifest
 import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
@@ -32,17 +30,12 @@ class WhatsappStatusRepository @Inject constructor(
         return flow {
             emit(StorageResponse.Loading)
 
-            val hasPermissions = hasRequiredPermissions(context)
-            Log.d("WhatsappRepo", "Has permissions: $hasPermissions")
-
-            if (!hasPermissions) {
-                emit(StorageResponse.Failure("Required permissions not granted"))
-                return@flow
-            }
-
             val possiblePaths = listOf(
                 File(Environment.getExternalStorageDirectory(), "WhatsApp/Media/.Statuses"),
-                File(Environment.getExternalStorageDirectory(), "Android/media/com.whatsapp/WhatsApp/Media/.Statuses"),
+                File(
+                    Environment.getExternalStorageDirectory(),
+                    "Android/media/com.whatsapp/WhatsApp/Media/.Statuses"
+                ),
                 File(Environment.getExternalStorageDirectory(), "WhatsApp Business/Media/.Statuses")
             )
 
@@ -66,27 +59,6 @@ class WhatsappStatusRepository @Inject constructor(
         }.flowOn(Dispatchers.IO)
     }
 
-    fun hasRequiredPermissions(context: Context): Boolean {
-        return when {
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE -> { // API 34
-                context.checkSelfPermission(Manifest.permission.READ_MEDIA_IMAGES) == PackageManager.PERMISSION_GRANTED &&
-                        context.checkSelfPermission(Manifest.permission.READ_MEDIA_VIDEO) == PackageManager.PERMISSION_GRANTED &&
-                        Environment.isExternalStorageManager()
-            }
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU -> { // API 33
-                context.checkSelfPermission(Manifest.permission.READ_MEDIA_IMAGES) == PackageManager.PERMISSION_GRANTED &&
-                        context.checkSelfPermission(Manifest.permission.READ_MEDIA_VIDEO) == PackageManager.PERMISSION_GRANTED
-            }
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.R -> { // API 30
-                Environment.isExternalStorageManager()
-            }
-            else -> {
-                context.checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED &&
-                        context.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
-            }
-        }
-    }
-
     fun downloadWhatsappStatus(
         statuses: List<File>,
     ): Flow<StorageResponse> = flow {
@@ -103,7 +75,8 @@ class WhatsappStatusRepository @Inject constructor(
 
                         //directory based on file type
                         val isVideo = status.name.endsWith(".mp4", ignoreCase = true)
-                        put(MediaStore.MediaColumns.RELATIVE_PATH,
+                        put(
+                            MediaStore.MediaColumns.RELATIVE_PATH,
                             if (isVideo) Environment.DIRECTORY_MOVIES + "/Snatchy"
                             else Environment.DIRECTORY_PICTURES + "/Snatchy"
                         )
@@ -114,6 +87,7 @@ class WhatsappStatusRepository @Inject constructor(
                         status.name.endsWith(".mp4", ignoreCase = true) -> {
                             MediaStore.Video.Media.EXTERNAL_CONTENT_URI
                         }
+
                         else -> {
                             MediaStore.Images.Media.EXTERNAL_CONTENT_URI
                         }
@@ -128,19 +102,32 @@ class WhatsappStatusRepository @Inject constructor(
                             }
                         }
 
+                        // Clear the pending
                         contentValues.clear()
                         contentValues.put(MediaStore.MediaColumns.IS_PENDING, 0)
                         context.contentResolver.update(it, contentValues, null, null)
 
                         downloadedStatus.add(status)
-                        Log.d("WhatsappStatusRepository", "Saved file: ${status.name} to ${if(status.name.endsWith(".mp4", ignoreCase = true)) "Movies" else "Pictures"}")
+                        Log.d(
+                            "WhatsappStatusRepository",
+                            "Saved file: ${status.name} to ${
+                                if (status.name.endsWith(
+                                        ".mp4",
+                                        ignoreCase = true
+                                    )
+                                ) "Movies" else "Pictures"
+                            }"
+                        )
                     }
                 } else {
+                    // Below Android 10: Direct file copy
                     val isVideo = status.name.endsWith(".mp4", ignoreCase = true)
-                    val desDir = File(Environment.getExternalStoragePublicDirectory(
-                        if (isVideo) Environment.DIRECTORY_MOVIES
-                        else Environment.DIRECTORY_PICTURES
-                    ), "Snatchy")
+                    val desDir = File(
+                        Environment.getExternalStoragePublicDirectory(
+                            if (isVideo) Environment.DIRECTORY_MOVIES
+                            else Environment.DIRECTORY_PICTURES
+                        ), "Snatchy"
+                    )
 
                     if (!desDir.exists()) desDir.mkdirs()
 
@@ -152,8 +139,12 @@ class WhatsappStatusRepository @Inject constructor(
                             }
                         }
                         // Trigger media scan
-                        context.sendBroadcast(Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE,
-                            Uri.fromFile(statusFile)))
+                        context.sendBroadcast(
+                            Intent(
+                                Intent.ACTION_MEDIA_SCANNER_SCAN_FILE,
+                                Uri.fromFile(statusFile)
+                            )
+                        )
                         downloadedStatus.add(statusFile)
                     }
                 }
