@@ -43,10 +43,10 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.berlin.snatchy.domain.model.StorageResponse
 import com.berlin.snatchy.presentation.WhatsappStatusViewModel
+import com.berlin.snatchy.presentation.ui.FailedScreen
 import com.berlin.snatchy.presentation.ui.StatusItem
 import java.io.File
 
@@ -58,7 +58,8 @@ import java.io.File
 fun SnatchyApplication(
     isDark: MutableState<Boolean>,
     onButtonClicked: () -> Unit,
-    whatsappVM: WhatsappStatusViewModel
+    whatsappVM: WhatsappStatusViewModel,
+    onRequestPermission: () -> Unit
 ) {
 
     val isRefreshing by whatsappVM.isRefreshing.collectAsState()
@@ -121,6 +122,7 @@ fun SnatchyApplication(
             isRefreshing = isRefreshing,
             onRefresh = whatsappVM::onRefresh,
             selectedFiles = selectedFiles,
+            onRequestPermission = onRequestPermission,
             onSelectedFilesChange = { selectedFiles = it }
         )
     }
@@ -134,7 +136,8 @@ fun StatusList(
     viewModel: WhatsappStatusViewModel,
     isRefreshing: Boolean,
     onRefresh: () -> Unit,
-    selectedFiles: Set<File>,  // NEW
+    selectedFiles: Set<File>,
+    onRequestPermission: () -> Unit,
     onSelectedFilesChange: (Set<File>) -> Unit
 ) {
     val statusResponse by viewModel.statuses.collectAsState()
@@ -191,11 +194,9 @@ fun StatusList(
 
                 is StorageResponse.Failure -> {
                     val errorMessage = (statusResponse as StorageResponse.Failure).message
-                    Text(
-                        text = errorMessage,
-                        color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.fillMaxSize(),
-                        textAlign = TextAlign.Center
+                    FailedScreen(
+                        errorMessage = errorMessage,
+                        onRequestPermissions = onRequestPermission,
                     )
                 }
             }

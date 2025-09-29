@@ -8,14 +8,14 @@ plugins {
 
 android {
     namespace = "com.berlin.snatchy"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.berlin.snatchy"
-        minSdk = 28
-        targetSdk = 35
+        minSdk = 23
+        targetSdk = 36
         versionCode = 1
-        versionName = "1.0"
+        versionName = "0.9"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -49,7 +49,6 @@ dependencies {
     implementation(libs.coil.compose)
 
     implementation(libs.hilt.android)
-    implementation(libs.androidx.media3.exoplayer)
     kapt(libs.hilt.compiler)
     kapt(libs.androidx.hilt.compiler)
 
