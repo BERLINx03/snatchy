@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -28,12 +29,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
+import com.berlin.snatchy.R
 
 @Composable
 fun FailedScreen(
@@ -120,7 +123,7 @@ fun FailedScreen(
                 .height(56.dp),
             shape = RoundedCornerShape(16.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = if (errorMessage == "No supported statuses found") {
+                containerColor = if (isNoStatusesError) {
                     Color(0xFF5865F2)
                 } else {
                     MaterialTheme.colorScheme.primary
@@ -132,17 +135,19 @@ fun FailedScreen(
             )
         ) {
             if (errorMessage == "No supported statuses found") {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.Send,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp)
-                )
                 Spacer(modifier = Modifier.width(12.dp))
-                Text(
-                    text = "Get Help on Discord",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
+                    Text(
+                        text = "Get Help on Discord",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                Spacer(modifier = Modifier.width(12.dp))
+                Icon(
+                        painter = painterResource(R.drawable.discord_icon),
+                        contentDescription = "Discord icon",
+                        modifier = Modifier.size(25.dp)
+                    )
+
             } else {
                 Icon(
                     imageVector = Icons.Default.Lock,

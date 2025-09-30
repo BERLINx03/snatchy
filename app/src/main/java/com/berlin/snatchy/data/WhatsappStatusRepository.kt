@@ -127,25 +127,21 @@ class WhatsappStatusRepository @Inject constructor(
                         if (!desDir.exists()) desDir.mkdirs()
 
                         val statusFile = File(desDir, status.name)
-                        if (!statusFile.exists()) {
-                            FileInputStream(status).use { input ->
-                                statusFile.outputStream().use { output ->
-                                    input.copyTo(output)
-                                }
+                        FileInputStream(status).use { input ->
+                            statusFile.outputStream().use { output ->
+                                input.copyTo(output)
                             }
-
-                            MediaScannerConnection.scanFile(
-                                context,
-                                arrayOf(statusFile.absolutePath),
-                                arrayOf(getMimeType(status)),
-                                null
-                            )
-
-                            downloadedCount.add(status.name)
-                            Log.d("WhatsappStatusRepository", "Saved: ${status.name}")
-                        } else {
-                            Log.d("WhatsappStatusRepository", "File already exists: ${status.name}")
                         }
+
+                        MediaScannerConnection.scanFile(
+                            context,
+                            arrayOf(statusFile.absolutePath),
+                            arrayOf(getMimeType(status)),
+                            null
+                        )
+
+                        downloadedCount.add(status.name)
+                        Log.d("WhatsappStatusRepository", "Saved: ${status.name}")
                     }
                 } catch (e: Exception) {
                     Log.e("WhatsappStatusRepository", "Failed to save ${status.name}: ${e.message}", e)
