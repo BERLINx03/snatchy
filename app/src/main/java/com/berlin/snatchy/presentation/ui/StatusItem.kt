@@ -2,13 +2,11 @@ package com.berlin.snatchy.presentation.ui
 
 import android.graphics.Bitmap
 import android.media.MediaMetadataRetriever
-import android.net.Uri
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -35,7 +33,7 @@ import java.io.File
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun StatusItem(onSeeImage: (String) -> Unit, status: File, isSelected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun StatusItem(status: File, isSelected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
     Card(
         modifier = modifier
             .fillMaxWidth()
@@ -69,19 +67,13 @@ fun StatusItem(onSeeImage: (String) -> Unit, status: File, isSelected: Boolean, 
                     )
             ){
                 if (status.extension.lowercase() in listOf("jpg", "jpeg", "png", "gif")) {
-                    val uri = Uri.fromFile(status)
                     Image(
                         painter = rememberAsyncImagePainter(model = status),
                         contentDescription = "Status Image",
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(120.dp)
-                            .scale(if (isSelected) 1.05f else 1f)
-                            .combinedClickable(
-                                onClick = onClick,
-                                onDoubleClick = { onSeeImage(uri.toString()) }
-                            )
-                        ,
+                            .scale(if (isSelected) 1.05f else 1f),
                         contentScale = ContentScale.Crop
                     )
                 } else if (status.extension.lowercase() == "mp4") {
