@@ -1,6 +1,5 @@
 package com.berlin.snatchy.presentation.ui.theme
 
-import android.app.Activity
 import android.graphics.Color
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -240,6 +239,7 @@ private val highContrastDarkColorScheme = darkColorScheme(
     surfaceContainerHigh = surfaceContainerHighDarkHighContrast,
     surfaceContainerHighest = surfaceContainerHighestDarkHighContrast,
 )
+
 @Immutable
 data class ColorFamily(
     val color: Color,

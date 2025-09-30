@@ -9,10 +9,13 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -63,18 +66,28 @@ fun SnatchyApplication(
 ) {
 
     val isRefreshing by whatsappVM.isRefreshing.collectAsState()
+    val statusResponse by whatsappVM.statuses.collectAsState()
 
     var selectedFiles by remember { mutableStateOf(setOf<File>()) }
 
     val context = LocalContext.current
 
+    val allStatuses = if (statusResponse is StorageResponse.Success) {
+        (statusResponse as StorageResponse.Success).statusList
+    } else {
+        emptyList()
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
                     Text(
-                        text = "Snatchy",
+                        text = if (selectedFiles.isNotEmpty()) {
+                            "${selectedFiles.size} selected"
+                        } else {
+                            "Snatchy"
+                        },
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold
                     )
@@ -85,11 +98,35 @@ fun SnatchyApplication(
                     actionIconContentColor = MaterialTheme.colorScheme.onPrimary
                 ),
                 actions = {
+                    if (allStatuses.isNotEmpty()) {
+                        IconButton(
+                            onClick = {
+                                selectedFiles = if (selectedFiles.size == allStatuses.size) {
+                                    emptySet()
+                                } else {
+                                    allStatuses.toSet()
+                                }
+                            }
+                        ) {
+                            Icon(
+                                imageVector = if (selectedFiles.size == allStatuses.size) {
+                                    Icons.Default.Clear
+                                } else {
+                                    Icons.Default.CheckCircle
+                                },
+                                contentDescription = if (selectedFiles.size == allStatuses.size) {
+                                    "Deselect All"
+                                } else {
+                                    "Select All"
+                                }
+                            )
+                        }
+                    }
+
                     IconButton(onClick = onButtonClicked) {
                         Icon(
-                            painter =
-                            if
-                                    (isDark.value) painterResource(R.drawable.baseline_light_mode_24)
+                            painter = if (isDark.value)
+                                painterResource(R.drawable.baseline_light_mode_24)
                             else
                                 painterResource(R.drawable.baseline_dark_mode_24),
                             contentDescription = "Switch dark or light mode Button"
@@ -174,7 +211,11 @@ fun StatusList(
                 is StorageResponse.Success -> {
                     val statuses = (statusResponse as StorageResponse.Success).statusList
                     LazyVerticalGrid(GridCells.Fixed(3)) {
-                        items(statuses) { file ->
+                        items(
+                            items = statuses,
+                            key = { status ->
+                            status.hashCode()
+                        }) { file ->
                             StatusItem(
                                 status = file,
                                 isSelected = selectedFiles.contains(file),
@@ -194,15 +235,26 @@ fun StatusList(
 
                 is StorageResponse.Failure -> {
                     val errorMessage = (statusResponse as StorageResponse.Failure).message
-                    FailedScreen(
-                        errorMessage = errorMessage,
-                        onRequestPermissions = onRequestPermission,
-                    )
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(paddingValues),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        item {
+                            FailedScreen(
+                                errorMessage = errorMessage,
+                                onRequestPermissions = onRequestPermission,
+                            )
+                        }
+                    }
                 }
             }
         }
     }
 }
+
 //from documentation
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

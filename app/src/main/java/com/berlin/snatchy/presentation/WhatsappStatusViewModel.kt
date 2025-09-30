@@ -95,20 +95,8 @@ class WhatsappStatusViewModel @Inject constructor(
     fun downloadWhatsappStatus(statuses: List<File>, context: Context) {
         viewModelScope.launch {
             try {
-                Log.d("WhatsappStatusViewModel", "Starting download for ${statuses.size} files")
-
-                val destinationPath = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    ""
-                } else {
-                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
-                        .toString() + "/Snatchy"
-                }
-
-                Log.d("WhatsappStatusViewModel", "Using path: $destinationPath")
-
                 whatsappRepository.downloadWhatsappStatus(statuses)
                     .collect { response ->
-                        Log.d("WhatsappStatusViewModel", "Download response: $response")
                         when (response) {
                             is StorageResponse.Success -> {
                                 Toast.makeText(

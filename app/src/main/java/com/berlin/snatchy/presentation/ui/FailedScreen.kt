@@ -28,6 +28,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -78,11 +79,21 @@ fun FailedScreen(
             color = MaterialTheme.colorScheme.onSurface
         )
 
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = "Pull down to refresh",
+            style = MaterialTheme.typography.bodyMedium,
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+            fontStyle = FontStyle.Italic
+        )
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
             text = if (isNoStatusesError) {
-                "We couldn't find any WhatsApp statuses. This might be due to:\n\n• WhatsApp not installed\n• No recent statuses available\n• App compatibility issue\n\nNeed help? Join our Discord community!"
+                "We couldn't find any WhatsApp statuses. This might be due to:\n\n• WhatsApp not installed\n• No recent statuses available\n• App compatibility issue\n\nNeed help? Join our Discord!"
             } else {
                 errorMessage
             },
@@ -91,7 +102,6 @@ fun FailedScreen(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             lineHeight = 24.sp
         )
-
         Spacer(modifier = Modifier.height(32.dp))
         Button(
             onClick = if (isNoStatusesError) {

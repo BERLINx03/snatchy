@@ -2,8 +2,7 @@ package com.berlin.snatchy.data
 
 import android.content.ContentValues
 import android.content.Context
-import android.content.Intent
-import android.net.Uri
+import android.media.MediaScannerConnection
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
@@ -16,7 +15,6 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import java.io.File
 import java.io.FileInputStream
-import java.io.IOException
 import javax.inject.Inject
 
 /**
@@ -36,13 +34,25 @@ class WhatsappStatusRepository @Inject constructor(
                     Environment.getExternalStorageDirectory(),
                     "Android/media/com.whatsapp/WhatsApp/Media/.Statuses"
                 ),
-                File(Environment.getExternalStorageDirectory(), "WhatsApp Business/Media/.Statuses")
+                File(
+                    Environment.getExternalStorageDirectory(),
+                    "WhatsApp Business/Media/.Statuses"
+                ),
+                File(
+                    Environment.getExternalStorageDirectory(),
+                    "Android/media/com.whatsapp.w4b/WhatsApp Business/Media/.Statuses"
+                ),
+                File(
+                    Environment.getExternalStorageDirectory(),
+                    "Android/media/com.whatsapp/WhatsApp/.Statuses"
+                ),
+                File("/storage/sdcard1/WhatsApp/Media/.Statuses"),
+                File("/storage/sdcard1/Android/media/com.whatsapp/WhatsApp/Media/.Statuses"),
             )
 
             val statusFiles = mutableListOf<File>()
 
             for (directory in possiblePaths) {
-                Log.d("WhatsappRepo", "Checking directory: ${directory.absolutePath}")
                 if (directory.exists() && directory.isDirectory) {
                     directory.listFiles()?.filter { file ->
                         file.isFile && isSupportedStatusFile(file)
@@ -63,105 +73,97 @@ class WhatsappStatusRepository @Inject constructor(
         statuses: List<File>,
     ): Flow<StorageResponse> = flow {
         emit(StorageResponse.Loading)
-        val downloadedStatus = mutableListOf<File>()
+        val downloadedCount = mutableListOf<String>()
 
         try {
             statuses.forEach { status ->
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    val contentValues = ContentValues().apply {
-                        put(MediaStore.MediaColumns.DISPLAY_NAME, status.name)
-                        put(MediaStore.MediaColumns.MIME_TYPE, getMimeType(status))
-                        put(MediaStore.MediaColumns.IS_PENDING, 1)
-
-                        //directory based on file type
+                try {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                         val isVideo = status.name.endsWith(".mp4", ignoreCase = true)
-                        put(
-                            MediaStore.MediaColumns.RELATIVE_PATH,
-                            if (isVideo) Environment.DIRECTORY_MOVIES + "/Snatchy"
-                            else Environment.DIRECTORY_PICTURES + "/Snatchy"
-                        )
-                    }
-
-                    // Choose correct MediaStore collection based on file type
-                    val collection = when {
-                        status.name.endsWith(".mp4", ignoreCase = true) -> {
-                            MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+                        val contentValues = ContentValues().apply {
+                            put(MediaStore.MediaColumns.DISPLAY_NAME, status.name)
+                            put(MediaStore.MediaColumns.MIME_TYPE, getMimeType(status))
+                            put(MediaStore.MediaColumns.IS_PENDING, 1)
+                            put(
+                                MediaStore.MediaColumns.RELATIVE_PATH,
+                                if (isVideo) Environment.DIRECTORY_MOVIES + "/Snatchy"
+                                else Environment.DIRECTORY_PICTURES + "/Snatchy"
+                            )
                         }
 
-                        else -> {
+                        val collection = if (isVideo) {
+                            MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+                        } else {
                             MediaStore.Images.Media.EXTERNAL_CONTENT_URI
                         }
-                    }
 
-                    val uri = context.contentResolver.insert(collection, contentValues)
+                        val uri = context.contentResolver.insert(collection, contentValues)
 
-                    uri?.let {
-                        context.contentResolver.openOutputStream(it)?.use { outputStream ->
-                            FileInputStream(status).use { inputStream ->
-                                inputStream.copyTo(outputStream)
+                        if (uri != null) {
+                            context.contentResolver.openOutputStream(uri)?.use { outputStream ->
+                                FileInputStream(status).use { inputStream ->
+                                    inputStream.copyTo(outputStream)
+                                }
                             }
+
+                            contentValues.clear()
+                            contentValues.put(MediaStore.MediaColumns.IS_PENDING, 0)
+                            context.contentResolver.update(uri, contentValues, null, null)
+
+                            downloadedCount.add(status.name)
+                            Log.d("WhatsappStatusRepository", "Saved: ${status.name}")
+                        } else {
+                            Log.e("WhatsappStatusRepository", "Failed to create MediaStore entry for: ${status.name}")
                         }
-
-                        // Clear the pending
-                        contentValues.clear()
-                        contentValues.put(MediaStore.MediaColumns.IS_PENDING, 0)
-                        context.contentResolver.update(it, contentValues, null, null)
-
-                        downloadedStatus.add(status)
-                        Log.d(
-                            "WhatsappStatusRepository",
-                            "Saved file: ${status.name} to ${
-                                if (status.name.endsWith(
-                                        ".mp4",
-                                        ignoreCase = true
-                                    )
-                                ) "Movies" else "Pictures"
-                            }"
+                    } else {
+                        val isVideo = status.name.endsWith(".mp4", ignoreCase = true)
+                        val desDir = File(
+                            Environment.getExternalStoragePublicDirectory(
+                                if (isVideo) Environment.DIRECTORY_MOVIES
+                                else Environment.DIRECTORY_PICTURES
+                            ), "Snatchy"
                         )
-                    }
-                } else {
-                    // Below Android 10: Direct file copy
-                    val isVideo = status.name.endsWith(".mp4", ignoreCase = true)
-                    val desDir = File(
-                        Environment.getExternalStoragePublicDirectory(
-                            if (isVideo) Environment.DIRECTORY_MOVIES
-                            else Environment.DIRECTORY_PICTURES
-                        ), "Snatchy"
-                    )
 
-                    if (!desDir.exists()) desDir.mkdirs()
+                        if (!desDir.exists()) desDir.mkdirs()
 
-                    val statusFile = File(desDir, status.name)
-                    if (!statusFile.exists()) {
-                        FileInputStream(status).use { input ->
-                            statusFile.outputStream().use { output ->
-                                input.copyTo(output)
+                        val statusFile = File(desDir, status.name)
+                        if (!statusFile.exists()) {
+                            FileInputStream(status).use { input ->
+                                statusFile.outputStream().use { output ->
+                                    input.copyTo(output)
+                                }
                             }
-                        }
-                        // Trigger media scan
-                        context.sendBroadcast(
-                            Intent(
-                                Intent.ACTION_MEDIA_SCANNER_SCAN_FILE,
-                                Uri.fromFile(statusFile)
+
+                            MediaScannerConnection.scanFile(
+                                context,
+                                arrayOf(statusFile.absolutePath),
+                                arrayOf(getMimeType(status)),
+                                null
                             )
-                        )
-                        downloadedStatus.add(statusFile)
+
+                            downloadedCount.add(status.name)
+                            Log.d("WhatsappStatusRepository", "Saved: ${status.name}")
+                        } else {
+                            Log.d("WhatsappStatusRepository", "File already exists: ${status.name}")
+                        }
                     }
+                } catch (e: Exception) {
+                    Log.e("WhatsappStatusRepository", "Failed to save ${status.name}: ${e.message}", e)
                 }
             }
 
-            if (downloadedStatus.isNotEmpty()) {
+            if (downloadedCount.isNotEmpty()) {
                 emit(
                     StorageResponse.Success(
                         statusList = statuses,
-                        message = "${downloadedStatus.size} statuses have been saved to gallery."
+                        message = "${downloadedCount.size} status${if (downloadedCount.size != 1) "es" else ""} saved to gallery."
                     )
                 )
             } else {
                 emit(StorageResponse.Failure("No statuses were downloaded."))
             }
-        } catch (e: IOException) {
-            Log.e("WhatsappStatusRepository", "Download failed: ${e.message}")
+        } catch (e: Exception) {
+            Log.e("WhatsappStatusRepository", "Download failed: ${e.message}", e)
             emit(StorageResponse.Failure("Failed to download: ${e.message}"))
         }
     }.flowOn(Dispatchers.IO)
