@@ -53,10 +53,21 @@ Your downloaded statuses are saved to:
 - **Photos**: `Pictures/Snatchy`
 - **Videos**: `Movies/Snatchy`
 
+Downloaded statuses will be automatically available in your device's gallery app as well.
+
 ![No Statuses Found](assets/no-statuses-found.png)
 
 *If you see this screen, make sure you've viewed some statuses in WhatsApp first!*
 
+## Troubleshooting
+
+If you've viewed statuses in WhatsApp but still see "No statuses found":
+
+1. Make sure you've granted all necessary permissions
+2. Try pull down to refresh.
+3. Try closing and reopening the app
+4. Ensure WhatsApp is up to date
+5. If the issue persists, contact me on Discord: **berlin4399** or from the button in the application.
 ## Download the Latest Version
 
 To download the latest version of the Snatchy app:
