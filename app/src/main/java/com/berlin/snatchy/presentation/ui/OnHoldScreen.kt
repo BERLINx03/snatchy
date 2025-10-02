@@ -20,6 +20,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -37,6 +38,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
+import androidx.media3.common.VideoSize
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.AspectRatioFrameLayout
@@ -70,6 +72,8 @@ fun OnHoldScreen(
         } else null
     }
 
+    var aspectRatio by remember { mutableFloatStateOf(9f / 16f) }
+
     val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
@@ -85,8 +89,19 @@ fun OnHoldScreen(
                 else -> {}
             }
         }
+        val listener = object : Player.Listener {
+            override fun onVideoSizeChanged(videoSize: VideoSize) {
+                if (videoSize.width > 0 && videoSize.height > 0) {
+                    aspectRatio = videoSize.width.toFloat() / videoSize.height.toFloat()
+                }
+            }
+        }
         lifecycleOwner.lifecycle.addObserver(observer)
+        exoPlayer?.addListener(listener)
 
+        onDispose {
+            exoPlayer?.removeListener(listener)
+        }
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
             exoPlayer?.release()
@@ -129,10 +144,9 @@ fun OnHoldScreen(
             if (isVideo && exoPlayer != null) {
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth(0.85f)
-                        .aspectRatio(16f / 16f)
+                        .fillMaxWidth(0.7f)
+                        .aspectRatio(aspectRatio)
                         .clip(RoundedCornerShape(24.dp))
-                        .background(Color.Black)
                 ) {
                     AndroidView(
                         factory = { ctx ->
@@ -148,10 +162,11 @@ fun OnHoldScreen(
                     )
                 }
             } else {
+
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth(0.85f)
-                        .aspectRatio(16f / 16f)
+                        .fillMaxWidth(0.65f)
+                        .aspectRatio(aspectRatio)
                         .clip(RoundedCornerShape(24.dp))
                         .background(Color.Black)
                 ) {
@@ -160,7 +175,11 @@ fun OnHoldScreen(
                             model = ImageRequest.Builder(context)
                                 .data(status)
                                 .crossfade(true)
-                                .build()
+                                .build(),
+                            onSuccess = { state ->
+                                val drawable = state.result.drawable
+                                aspectRatio = drawable.intrinsicWidth.toFloat() / drawable.intrinsicHeight.toFloat()
+                            }
                         ),
                         contentDescription = "Status Preview",
                         contentScale = ContentScale.Crop,
