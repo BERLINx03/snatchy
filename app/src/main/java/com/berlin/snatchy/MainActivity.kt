@@ -12,8 +12,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.core.net.toUri
 import androidx.lifecycle.ViewModelProvider
 import com.berlin.snatchy.presentation.WhatsappStatusViewModel
@@ -45,7 +44,6 @@ class MainActivity : ComponentActivity() {
                 }
                 whatsappVM.retryFetchingStatuses()
             }
-            val isDark = rememberSaveable { mutableStateOf(false) }
             dialogQueue
                 .reversed()
                 .forEach { permission ->
@@ -75,10 +73,8 @@ class MainActivity : ComponentActivity() {
                         onGoToAppSettingsClick = ::goToAppSettings,
                     )
                 }
-            SnatchyTheme(darkTheme = isDark.value) {
+            SnatchyTheme(darkTheme =isSystemInDarkTheme()) {
                 SnatchyApplication(
-                    isDark = isDark,
-                    onButtonClicked = { isDark.value = !isDark.value },
                     whatsappVM = whatsappVM,
                     onRequestPermission = {requestMultiplePermissions.launch(whatsappVM.permissions)}
                 )
