@@ -15,7 +15,7 @@ android {
         minSdk = 23
         targetSdk = 36
         versionCode = 1
-        versionName = "1.1"
+        versionName = "1.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -44,6 +44,7 @@ kapt {
     correctErrorTypes = true
 }
 dependencies {
+    implementation("androidx.work:work-runtime-ktx:2.10.5")
     implementation(libs.material3)
     implementation(libs.coil.compose)
     implementation(libs.hilt.android)
