@@ -1,5 +1,6 @@
 package com.berlin.snatchy
 
+import android.graphics.Bitmap
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
@@ -46,6 +47,7 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshState
 import androidx.compose.material3.pulltorefresh.pullToRefreshIndicator
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -89,6 +91,8 @@ fun SnatchyApplication(
     val isRefreshing by whatsappVM.isRefreshing.collectAsState()
     val statusResponse by whatsappVM.statuses.collectAsState()
 
+    val thumbnailCache by whatsappVM.thumbnailCache.collectAsState()
+
     var selectedFiles by remember { mutableStateOf(setOf<File>()) }
     var filterType by remember { mutableStateOf(FilterType.ALL) }
     var sortOrder by remember { mutableStateOf(SortOrder.NEWEST_FIRST) }
@@ -116,6 +120,9 @@ fun SnatchyApplication(
             SortOrder.NEWEST_FIRST -> filtered.sortedByDescending { it.lastModified() }
             SortOrder.OLDEST_FIRST -> filtered.sortedBy { it.lastModified() }
         }
+    }
+    LaunchedEffect(allStatuses) {
+        whatsappVM.preloadThumbnails(context, allStatuses)
     }
     Scaffold(
         topBar = {
@@ -393,6 +400,7 @@ fun SnatchyApplication(
             },
             statuses = filteredStatuses,
             selectedFiles = selectedFiles,
+            thumbnailCache = thumbnailCache,
             onRequestPermission = onRequestPermission,
             onSelectedFilesChange = { selectedFiles = it }
         )
@@ -409,6 +417,7 @@ fun StatusList(
     onRefresh: () -> Unit,
     statuses: List<File>,
     selectedFiles: Set<File>,
+    thumbnailCache: Map<String, Bitmap?>,
     onRequestPermission: () -> Unit,
     onSelectedFilesChange: (Set<File>) -> Unit
 ) {
@@ -444,13 +453,15 @@ fun StatusList(
                 }
 
                 is StorageResponse.Success -> {
-                    LazyVerticalGrid(GridCells.Fixed(3),contentPadding = PaddingValues(4.dp)) {
+                    LazyVerticalGrid(GridCells.Adaptive(100.dp),contentPadding = PaddingValues(4.dp)) {
                         items(
                             items = statuses,
-                            key = { status -> status.hashCode() }) { file ->
+                            key = { status -> status.absolutePath },
+                            contentType = { it.extension.lowercase() }) { file ->
                             StatusItem(
                                 status = file,
                                 isSelected = selectedFiles.contains(file),
+                                thumbnail = thumbnailCache[file.absolutePath],
                                 onClick = {
                                     onSelectedFilesChange(
                                         if (file in selectedFiles) {

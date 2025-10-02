@@ -4,6 +4,9 @@ import android.Manifest
 import android.app.Application
 import android.content.Context
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.media.MediaMetadataRetriever
 import android.os.Build
 import android.os.Environment
 import android.util.Log
@@ -14,10 +17,13 @@ import androidx.lifecycle.viewModelScope
 import com.berlin.snatchy.data.WhatsappStatusRepository
 import com.berlin.snatchy.domain.model.StorageResponse
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.io.File
+import java.io.FileOutputStream
 import javax.inject.Inject
 
 /**
@@ -34,7 +40,8 @@ class WhatsappStatusViewModel @Inject constructor(
 
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing = _isRefreshing.asStateFlow()
-
+    private val _thumbnailCache = MutableStateFlow<Map<String, Bitmap?>>(emptyMap())
+    val thumbnailCache: StateFlow<Map<String, Bitmap?>> = _thumbnailCache.asStateFlow()
     val permissions = if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q) {
         arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE)
     } else { arrayOf(Manifest.permission.MANAGE_EXTERNAL_STORAGE) }
@@ -48,6 +55,22 @@ class WhatsappStatusViewModel @Inject constructor(
         }
     }
 
+    fun preloadThumbnails(context: Context, statuses: List<File>) {
+        viewModelScope.launch(Dispatchers.IO) {
+
+            val thumbnails = mutableMapOf<String, Bitmap?>()
+
+            statuses
+                .filter { it.extension.lowercase() == "mp4" }
+                .forEach { file ->
+                    if (!thumbnails.contains(file.absolutePath)) {
+                        val thumbnail = getOrCreateVideoThumbnail(context, file)
+                        thumbnails[file.absolutePath] = thumbnail
+                    }
+                }
+            _thumbnailCache.value = thumbnails
+        }
+    }
     private fun hasPermission(permission: String): Boolean {
         return if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q &&
             permission == Manifest.permission.MANAGE_EXTERNAL_STORAGE) {
@@ -92,6 +115,10 @@ class WhatsappStatusViewModel @Inject constructor(
         fetchWhatsappStatuses()
     }
 
+    override fun onCleared() {
+        super.onCleared()
+        _thumbnailCache.value.values.forEach { it?.recycle() }
+    }
     fun downloadWhatsappStatus(statuses: List<File>, context: Context) {
         viewModelScope.launch {
             try {
@@ -126,6 +153,37 @@ class WhatsappStatusViewModel @Inject constructor(
                     Toast.LENGTH_SHORT
                 ).show()
             }
+        }
+    }
+
+    fun getOrCreateVideoThumbnail(context: Context, file: File): Bitmap? {
+        val cacheDir = File(context.cacheDir, "video_thumbnails")
+        if (!cacheDir.exists()) cacheDir.mkdirs()
+
+        val thumbnailFile = File(cacheDir, "${file.name}.jpg")
+
+        // Return cached thumbnail if exists
+        if (thumbnailFile.exists()) {
+            return BitmapFactory.decodeFile(thumbnailFile.absolutePath)
+        }
+
+        // Generate and cache new thumbnail
+        return try {
+            val retriever = MediaMetadataRetriever()
+            retriever.setDataSource(file.absolutePath)
+            val frame = retriever.getFrameAtTime(0, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
+            retriever.release()
+
+            // Save to cache
+            frame?.let {
+                FileOutputStream(thumbnailFile).use { out ->
+                    it.compress(Bitmap.CompressFormat.JPEG, 85, out)
+                }
+            }
+            frame
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
         }
     }
 }

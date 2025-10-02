@@ -1,7 +1,6 @@
 package com.berlin.snatchy.presentation.ui
 
 import android.graphics.Bitmap
-import android.media.MediaMetadataRetriever
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
@@ -23,6 +22,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -32,13 +32,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
+import coil.request.ImageRequest
 import java.io.File
 
 /**
@@ -49,22 +50,14 @@ import java.io.File
 fun StatusItem(
     status: File,
     isSelected: Boolean,
+    thumbnail: Bitmap?,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val timeLeft = remember(status) {
-        val creationTime = status.lastModified()
-        val expiryTime = creationTime + (24 * 60 * 60 * 1000)
-        val currentTime = System.currentTimeMillis()
-        val remainingTime = expiryTime - currentTime
-
-        when {
-            remainingTime <= 0 -> "Expired"
-            remainingTime < 60 * 60 * 1000 -> "${remainingTime / (60 * 1000)}m left"
-            else -> "${remainingTime / (60 * 60 * 1000)}h left"
-        }
+    val ctx = LocalContext.current
+    val timeLeft = remember(status.lastModified()) {
+        calculateTimeLeft(status.lastModified())
     }
-
     val isVideo = status.extension.lowercase() == "mp4"
 
     Card(
@@ -99,24 +92,35 @@ fun StatusItem(
             ) {
                 if (status.extension.lowercase() in listOf("jpg", "jpeg", "png", "gif", "webp")) {
                     Image(
-                        painter = rememberAsyncImagePainter(model = status),
+                        painter = rememberAsyncImagePainter(
+                            model = ImageRequest.Builder(ctx)
+                                .data(status)
+                                .memoryCacheKey(status.absolutePath)
+                                .diskCacheKey(status.absolutePath)
+                                .size(400)
+                                .crossfade(true)
+                                .build()
+                        ),
                         contentDescription = "Status Image",
                         modifier = Modifier
-                            .fillMaxSize()
-                            .scale(if (isSelected) 1.02f else 1f),
+                            .fillMaxSize(),
                         contentScale = ContentScale.Crop
                     )
                 } else if (isVideo) {
-                    val videoFrame = remember { getVideoFrame(status) }
-                    videoFrame?.let {
+                    if (thumbnail != null) {
                         Image(
-                            bitmap = it.asImageBitmap(),
+                            bitmap = thumbnail.asImageBitmap(),
                             contentDescription = "Video Thumbnail",
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .scale(if (isSelected) 1.02f else 1f),
+                            modifier = Modifier.fillMaxSize(),
                             contentScale = ContentScale.Crop
                         )
+                    } else {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                        }
                     }
 
                     Box(
@@ -201,15 +205,13 @@ fun StatusItem(
         }
     }
 }
-fun getVideoFrame(file: File): Bitmap? {
-    return try {
-        val retriever = MediaMetadataRetriever()
-        retriever.setDataSource(file.absolutePath)
-        val frame = retriever.getFrameAtTime(0, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
-        retriever.release()
-        frame
-    } catch (e: Exception) {
-        e.printStackTrace()
-        null
+private fun calculateTimeLeft(lastModified: Long): String {
+    val expiryTime = lastModified + (24 * 60 * 60 * 1000)
+    val remainingTime = expiryTime - System.currentTimeMillis()
+
+    return when {
+        remainingTime <= 0 -> "Expired"
+        remainingTime < 60 * 60 * 1000 -> "${remainingTime / (60 * 1000)}m left"
+        else -> "${remainingTime / (60 * 60 * 1000)}h left"
     }
 }
