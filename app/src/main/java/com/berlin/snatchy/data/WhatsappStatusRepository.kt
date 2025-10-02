@@ -21,12 +21,12 @@ import javax.inject.Inject
 /**
  * @author Abdallah Elsokkary
  */
+const val CACHE_DIR_NAME = ".cached_statuses"
 class WhatsappStatusRepository @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
     companion object {
         private const val TAG = "WhatsappRepository"
-        private const val CACHE_DIR_NAME = ".cached_statuses"
     }
 
     private val mDir: File? by lazy {
@@ -43,7 +43,6 @@ class WhatsappStatusRepository @Inject constructor(
         return flow {
             emit(StorageResponse.Loading)
 
-            cleanupExpiredStatuses()
             val possiblePaths = listOf(
                 File(Environment.getExternalStorageDirectory(), "WhatsApp/Media/.Statuses"),
                 File(
@@ -151,30 +150,6 @@ class WhatsappStatusRepository @Inject constructor(
             Log.e(TAG, "Error caching files", e)
         } catch (e: SecurityException) {
             Log.e(TAG, "Permission denied", e)
-        }
-    }
-
-    private fun cleanupExpiredStatuses() {
-
-        try {
-            val currentTime = System.currentTimeMillis()
-            val expirationTime = 24 * 60 * 60 * 1000
-
-            mDir?.listFiles()?.forEach { file ->
-                val fileAge = currentTime - file.lastModified()
-
-                if (fileAge > expirationTime) {
-                    if (file.delete()) {
-                        Log.d(TAG, "Deleted expired status: ${file.name}")
-                    } else {
-                        Log.w(TAG, "Failed to delete expired status: ${file.name}")
-                    }
-                }
-            }
-        } catch (e: SecurityException) {
-            Log.e(TAG, "Permission denied during cleanup", e)
-        } catch (e: Exception) {
-            Log.e(TAG, "Error during cleanup", e)
         }
     }
 
