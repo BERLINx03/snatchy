@@ -44,7 +44,11 @@ kapt {
     correctErrorTypes = true
 }
 dependencies {
-    implementation("androidx.work:work-runtime-ktx:2.10.5")
+    implementation(libs.androidx.media3.exoplayer)
+    implementation(libs.androidx.media3.ui.compose)
+    implementation("androidx.media3:media3-ui:1.8.0")
+    implementation(libs.androidx.media3.exoplayer.v180)
+    implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.material3)
     implementation(libs.coil.compose)
     implementation(libs.hilt.android)

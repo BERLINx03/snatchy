@@ -39,11 +39,11 @@ fun StatusList(
     selectedFiles: Set<File>,
     thumbnailCache: Map<String, Bitmap?>,
     onRequestPermission: () -> Unit,
-    onSelectedFilesChange: (Set<File>) -> Unit
+    onSelectedFilesChange: (Set<File>) -> Unit,
+    onPreviewStatusChange: (File?) -> Unit
 ) {
     val statusResponse by viewModel.statuses.collectAsState()
     val pullToRefreshState = rememberPullToRefreshState()
-
     PullToRefreshBox(
         isRefreshing = isRefreshing,
         onRefresh = onRefresh,
@@ -90,6 +90,9 @@ fun StatusList(
                                             selectedFiles + file
                                         }
                                     )
+                                },
+                                onLongClick = {
+                                    onPreviewStatusChange(file)
                                 }
                             )
                         }

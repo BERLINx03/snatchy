@@ -5,7 +5,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -34,8 +34,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
@@ -48,23 +50,24 @@ import java.io.File
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun StatusItem(
+    modifier: Modifier = Modifier,
     status: File,
     isSelected: Boolean,
     thumbnail: Bitmap?,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    onLongClick: () -> Unit,
 ) {
     val ctx = LocalContext.current
     val timeLeft = remember(status.lastModified()) {
         calculateTimeLeft(status.lastModified())
     }
     val isVideo = status.extension.lowercase() == "mp4"
+    val haptics = LocalHapticFeedback.current
 
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .padding(4.dp)
-            .clickable(onClick = onClick),
+            .padding(4.dp),
         elevation = CardDefaults.cardElevation(
             defaultElevation = if (isSelected) 8.dp else 4.dp
         ),
@@ -82,6 +85,14 @@ fun StatusItem(
             modifier = Modifier
                 .fillMaxWidth()
                 .aspectRatio(0.75f)
+                .combinedClickable(
+                    enabled = true,
+                    onClick = onClick,
+                    onLongClick = {
+                        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                        onLongClick()
+                    }
+                )
         ) {
             Box(
                 modifier = Modifier

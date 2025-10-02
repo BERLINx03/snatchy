@@ -44,6 +44,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.berlin.snatchy.domain.model.StorageResponse
 import com.berlin.snatchy.presentation.WhatsappStatusViewModel
+import com.berlin.snatchy.presentation.ui.OnHoldScreen
 import com.berlin.snatchy.presentation.ui.StatusList
 import com.berlin.snatchy.presentation.ui.openGivenProfile
 import java.io.File
@@ -65,7 +66,7 @@ fun SnatchyApplication(
     whatsappVM: WhatsappStatusViewModel,
     onRequestPermission: () -> Unit
 ) {
-
+    val previewStatus = whatsappVM.previewStatus
     val isRefreshing by whatsappVM.isRefreshing.collectAsState()
     val statusResponse by whatsappVM.statuses.collectAsState()
 
@@ -229,7 +230,8 @@ fun SnatchyApplication(
                     }
                 )
             }
-        }
+        },
+        modifier = Modifier.fillMaxSize()
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -338,7 +340,14 @@ fun SnatchyApplication(
                 selectedFiles = selectedFiles,
                 thumbnailCache = thumbnailCache,
                 onRequestPermission = onRequestPermission,
-                onSelectedFilesChange = { selectedFiles = it }
+                onSelectedFilesChange = { selectedFiles = it },
+                onPreviewStatusChange = { whatsappVM.updatePreviewStatus(it) }
+            )
+        }
+        previewStatus?.let { status ->
+            OnHoldScreen(
+                status = status,
+                onDismiss = { whatsappVM.updatePreviewStatus(null) }
             )
         }
     }

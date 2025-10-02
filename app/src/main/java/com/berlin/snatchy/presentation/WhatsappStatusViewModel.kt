@@ -11,6 +11,9 @@ import android.os.Build
 import android.os.Environment
 import android.util.Log
 import android.widget.Toast
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -42,6 +45,8 @@ class WhatsappStatusViewModel @Inject constructor(
     val isRefreshing = _isRefreshing.asStateFlow()
     private val _thumbnailCache = MutableStateFlow<Map<String, Bitmap?>>(emptyMap())
     val thumbnailCache: StateFlow<Map<String, Bitmap?>> = _thumbnailCache.asStateFlow()
+    var previewStatus by mutableStateOf<File?>(null)
+        private set
     val permissions = if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q) {
         arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE)
     } else { arrayOf(Manifest.permission.MANAGE_EXTERNAL_STORAGE) }
@@ -54,7 +59,9 @@ class WhatsappStatusViewModel @Inject constructor(
             fetchWhatsappStatuses()
         }
     }
-
+    fun updatePreviewStatus(file: File?) {
+        previewStatus = file
+    }
     fun preloadThumbnails(context: Context, statuses: List<File>) {
         viewModelScope.launch(Dispatchers.IO) {
 
