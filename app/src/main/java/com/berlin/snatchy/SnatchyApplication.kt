@@ -64,6 +64,7 @@ import com.berlin.snatchy.domain.model.StorageResponse
 import com.berlin.snatchy.presentation.WhatsappStatusViewModel
 import com.berlin.snatchy.presentation.ui.FailedScreen
 import com.berlin.snatchy.presentation.ui.StatusItem
+import com.berlin.snatchy.presentation.ui.openGivenProfile
 import java.io.File
 
 /**
@@ -275,6 +276,47 @@ fun SnatchyApplication(
                                     RadioButton(
                                         selected = sortOrder == SortOrder.OLDEST_FIRST,
                                         onClick = null
+                                    )
+                                }
+                            )
+                            HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
+                            Text(
+                                text = "Contact me",
+                                style = MaterialTheme.typography.labelSmall,
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Discord") },
+                                onClick = {
+                                    openGivenProfile(
+                                        context = context,
+                                        "https://discord.com/users/543104385098579999",
+                                        "com.discord"
+                                    )
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        painter = painterResource(R.drawable.discord_icon),
+                                        contentDescription = "Contact me on Discord",
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("X") },
+                                onClick = {
+                                    openGivenProfile(
+                                        context = context,
+                                        "https://x.com/BERLINx03",
+                                        "com.twitter.android"
+                                    )
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        painter = painterResource(R.drawable.twitter),
+                                        contentDescription = "Contact me on X",
+                                        modifier = Modifier.size(20.dp)
                                     )
                                 }
                             )
