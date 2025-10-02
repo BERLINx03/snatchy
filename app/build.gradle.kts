@@ -15,7 +15,7 @@ android {
         minSdk = 23
         targetSdk = 36
         versionCode = 1
-        versionName = "1.0"
+        versionName = "1.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -50,7 +50,7 @@ dependencies {
     kapt(libs.hilt.compiler)
     kapt(libs.androidx.hilt.compiler)
 
-
+    implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.androidx.activity.ktx)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)

@@ -45,7 +45,7 @@ When you first open Snatchy, you'll need to grant storage permissions:
 2. Open Snatchy to find the available statuses 📂
 3. Tap to select and download your favorites 👍
 
-![Select and Download Screen](assets/download-selected.png)
+![Select and Download Screen](assets/download-selected.jpg)
 
 ### Step 3: Access Your Downloads
 
