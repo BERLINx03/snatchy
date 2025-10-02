@@ -49,7 +49,7 @@ Before downloading, you can preview any status to see it in full screen:
    - Swipe between multiple statuses
    - See the time remaining for each status (e.g., "20h left", "19h left")
 
-![Preview Feature](assets/preview-screen.jpg)
+![Preview Feature](assets/preview.jpg)
 
 *The preview feature lets you review statuses before deciding which ones to download.*
 
