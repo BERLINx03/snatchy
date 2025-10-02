@@ -37,17 +37,31 @@ When you first open Snatchy, you'll need to grant storage permissions:
 
 2. If needed, enable permissions later in:
     - **Settings** → **Apps** → **Snatchy** → **Permissions** → **Storage** → **Allow**
+### Step 2: Preview Statuses
 
+Before downloading, you can preview any status to see it in full screen:
 
-### Step 2: Download Statuses
+1. Open Snatchy to view available statuses from your contacts
+2. Tap on any status thumbnail to open the preview screen
+3. In preview mode, you can:
+   - View photos in full resolution
+   - Play videos with playback controls
+   - Swipe between multiple statuses
+   - See the time remaining for each status (e.g., "20h left", "19h left")
+
+![Preview Feature](assets/preview.jpg)
+
+*The preview feature lets you review statuses before deciding which ones to download.*
+
+### Step 3: Download Statuses
 
 1. View the status in WhatsApp 👀
 2. Open Snatchy to find the available statuses 📂
 3. Tap to select and download your favorites 👍
 
-![Select and Download Screen](assets/download-selected.jpg)
+![Select and Download Screen](assets/selected-items.jpg)
 
-### Step 3: Access Your Downloads
+### Step 4: Access Your Downloads
 
 Your downloaded statuses are saved to:
 - **Photos**: `Pictures/Snatchy`
@@ -85,6 +99,8 @@ To download the latest version of the Snatchy app:
 🎥 Download video statuses  
 🌓 Dark mode support  
 💾 Automatic gallery organization
+👁️ Preview statuses before downloading  
+⏱️ View time remaining for each status
 
 ## Tech Stack
 
