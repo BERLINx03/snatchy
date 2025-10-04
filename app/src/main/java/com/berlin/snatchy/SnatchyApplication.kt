@@ -1,28 +1,18 @@
 package com.berlin.snatchy
 
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.GridView
-import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.SelectAll
-import androidx.compose.material.icons.filled.VideoLibrary
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -47,6 +37,7 @@ import com.berlin.snatchy.presentation.WhatsappStatusViewModel
 import com.berlin.snatchy.presentation.ui.OnHoldScreen
 import com.berlin.snatchy.presentation.ui.StatusList
 import com.berlin.snatchy.presentation.ui.openGivenProfile
+import com.berlin.snatchy.presentation.ui.util.FilterRow
 import java.io.File
 
 /**
@@ -238,96 +229,23 @@ fun SnatchyApplication(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
-                    .horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                FilterChip(
-                    selected = filterType == FilterType.ALL,
-                    onClick = { filterType = FilterType.ALL },
-                    label = { Text("All (${allStatuses.size})") },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.GridView,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
+            FilterRow(
+                allSelected = filterType == FilterType.ALL,
+                onAllClick = { filterType = FilterType.ALL },
+                imageSelected = filterType == FilterType.IMAGES,
+                onImagesClick = { filterType = FilterType.IMAGES },
+                isVideoSelected = filterType == FilterType.VIDEOS,
+                onVideoSelected = { filterType = FilterType.VIDEOS },
+                isOldSort = sortOrder == SortOrder.OLDEST_FIRST,
+                onSortSelected = {
+                    sortOrder = if (sortOrder == SortOrder.NEWEST_FIRST) {
+                        SortOrder.OLDEST_FIRST
+                    } else {
+                        SortOrder.NEWEST_FIRST
                     }
-                )
-
-                FilterChip(
-                    selected = filterType == FilterType.IMAGES,
-                    onClick = { filterType = FilterType.IMAGES },
-                    label = {
-                        Text(
-                            "Images (${
-                                allStatuses.count {
-                                    it.extension.lowercase() in listOf(
-                                        "jpg",
-                                        "jpeg",
-                                        "png",
-                                        "gif",
-                                        "webp"
-                                    )
-                                }
-                            })"
-                        )
-                    },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.Image,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-                )
-
-                FilterChip(
-                    selected = filterType == FilterType.VIDEOS,
-                    onClick = { filterType = FilterType.VIDEOS },
-                    label = {
-                        Text(
-                            "Videos (${
-                                allStatuses.count {
-                                    it.extension.lowercase() == "mp4"
-                                }
-                            })"
-                        )
-                    },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.VideoLibrary,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-                )
-
-                FilterChip(
-                    selected = sortOrder == SortOrder.OLDEST_FIRST,
-                    onClick = {
-                        sortOrder = if (sortOrder == SortOrder.NEWEST_FIRST) {
-                            SortOrder.OLDEST_FIRST
-                        } else {
-                            SortOrder.NEWEST_FIRST
-                        }
-                    },
-                    label = {
-                        Text(if (sortOrder == SortOrder.NEWEST_FIRST) "Newest" else "Oldest")
-                    },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.Sort,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-                )
-            }
-
+                },
+                allStatuses = allStatuses
+            )
             StatusList(
                 PaddingValues(0.dp),
                 viewModel = whatsappVM,
