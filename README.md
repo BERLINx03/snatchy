@@ -9,7 +9,7 @@ Snatchy is a lightweight Android app designed to effortlessly download and save 
 
 ## Requirements
 
-- Android 6.0+ (API level 23 or higher)
+- **Android 5.0+** (API level 21 or higher)
 - WhatsApp installed on your device
 
 ## How to Use
@@ -37,6 +37,10 @@ When you first open Snatchy, you'll need to grant storage permissions:
 
 2. If needed, enable permissions later in:
     - **Settings** → **Apps** → **Snatchy** → **Permissions** → **Storage** → **Allow**
+
+**For Android 5:**
+- Permissions are granted automatically during installation - no action needed!
+
 ### Step 2: Preview Statuses
 
 Before downloading, you can preview any status to see it in full screen:
